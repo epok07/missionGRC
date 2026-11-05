@@ -1,0 +1,302 @@
+<div class="mg-page mg-risks">
+  <header class="mg-page-head">
+    <div>
+      <span class="mg-eyebrow"><i class="ti ti-alert-triangle"></i> Open items</span>
+      <h1 class="mg-page-title">If it is not owned, dated, and <em>evidenced</em>, it is not managed.</h1>
+      <p class="mg-page-subtitle">
+        Risks, issues, decisions, and actions in one register. Every line should answer: who owns this, by when, and what would prove it closed?
+      </p>
+    </div>
+    <div class="mg-page-actions">
+      <button type="button" class="mg-btn mg-btn-primary" (click)="toggleAdd()">
+        <i class="ti" [class]="'ti ' + (addOpen() ? 'ti-x' : 'ti-plus')"></i>
+        {{ addOpen() ? 'Close form' : 'New open item' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="mg-risk-stats" aria-label="Open item summary">
+    <article class="mg-risk-stat">
+      <span class="mg-risk-stat-label">Open</span>
+      <strong>{{ stats().open }}</strong>
+      <small>Risks, issues, decisions, actions</small>
+    </article>
+    <article class="mg-risk-stat is-red">
+      <span class="mg-risk-stat-label">Critical</span>
+      <strong>{{ stats().critical }}</strong>
+      <small>Needs a named decision</small>
+    </article>
+    <article class="mg-risk-stat is-indigo">
+      <span class="mg-risk-stat-label">Decision queue</span>
+      <strong>{{ stats().decisions }}</strong>
+      <small>Waiting on a choice</small>
+    </article>
+    <article class="mg-risk-stat is-orange">
+      <span class="mg-risk-stat-label">Overdue</span>
+      <strong>{{ stats().overdue }}</strong>
+      <small>Decide or re-date</small>
+    </article>
+  </section>
+
+  @if (addOpen()) {
+    <section class="mg-card mg-add-risk">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-file-plus"></i> Register an open item</h2>
+          <p class="mg-card-sub">Write the exposure in business terms. A reference is assigned automatically.</p>
+        </div>
+      </div>
+      <div class="mg-card-body">
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="mg-form-row">
+            <label class="mg-field mg-field-wide">
+              <span class="mg-label">Title</span>
+              <input class="mg-input" formControlName="title" placeholder="What is exposed, and to whom?" maxlength="180" />
+              @if (form.controls.title.touched && form.controls.title.invalid) {
+                <span class="mg-field-error">Give the item a clear title.</span>
+              }
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Type</span>
+              <select class="mg-select" formControlName="type">
+                @for (type of types; track type) {
+                  <option [value]="type">{{ riskTypeLabel(type) }}</option>
+                }
+              </select>
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Severity</span>
+              <select class="mg-select" formControlName="severity">
+                @for (priority of priorities; track priority) {
+                  <option [value]="priority">{{ priority }}</option>
+                }
+              </select>
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Owner</span>
+              <input class="mg-input" formControlName="owner" placeholder="A person, not a team" />
+              @if (form.controls.owner.touched && form.controls.owner.invalid) {
+                <span class="mg-field-error">Name the accountable owner.</span>
+              }
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Business unit</span>
+              <input class="mg-input" formControlName="businessUnit" />
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Due</span>
+              <input class="mg-input" type="date" formControlName="due" />
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Framework</span>
+              <input class="mg-input" formControlName="framework" />
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Control</span>
+              <input class="mg-input" formControlName="control" placeholder="Clause or internal control" />
+            </label>
+          </div>
+          <div class="mg-form-row mg-form-row-pad">
+            <label class="mg-field mg-field-wide">
+              <span class="mg-label">Exposure in business terms</span>
+              <input class="mg-input" formControlName="exposure" placeholder="Revenue, customer, regulatory, or timing impact" />
+            </label>
+            <label class="mg-field mg-field-wide">
+              <span class="mg-label">Notes / evidence needed</span>
+              <textarea class="mg-textarea" formControlName="notes" rows="2" placeholder="What would convince an auditor or a board member?"></textarea>
+            </label>
+          </div>
+          <label class="mg-check">
+            <input type="checkbox" formControlName="decisionNeeded" />
+            <span>A decision is required from leadership</span>
+          </label>
+          <div class="mg-form-actions">
+            <button type="submit" class="mg-btn mg-btn-primary"><i class="ti ti-check"></i> Add to register</button>
+            <button type="button" class="mg-btn mg-btn-ghost" (click)="toggleAdd()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  }
+
+  <div class="mg-risk-toolbar">
+    <div class="mg-filter-row" role="group" aria-label="Filter by type">
+      <button type="button" class="mg-chip" [class.is-active]="typeFilter() === 'all'" (click)="typeFilter.set('all')">
+        All types
+      </button>
+      @for (type of types; track type) {
+        <button type="button" class="mg-chip" [class.is-active]="typeFilter() === type" (click)="typeFilter.set(type)">
+          <i class="ti" [class]="'ti ' + riskTypeIcon(type)"></i>
+          {{ riskTypeLabel(type) }}
+        </button>
+      }
+    </div>
+    <div class="mg-risk-toolbar-right">
+      <label class="mg-field mg-status-select">
+        <span class="mg-sr-only">Filter by status</span>
+        <select class="mg-select" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+          <option value="all">All statuses</option>
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ riskStatusLabel(status) }}</option>
+          }
+        </select>
+      </label>
+      <label class="mg-search">
+        <i class="ti ti-search" aria-hidden="true"></i>
+        <input
+          class="mg-input"
+          type="search"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+          placeholder="Search register"
+          aria-label="Search open items"
+        />
+      </label>
+    </div>
+  </div>
+
+  <div class="mg-risk-grid">
+    <section class="mg-card mg-risk-table-card">
+      <div class="mg-card-body is-flush">
+        @if (filtered().length) {
+          <div class="mg-table-wrap">
+            <table class="mg-table mg-risk-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Severity</th>
+                  <th>Status</th>
+                  <th>Owner</th>
+                  <th>Due</th>
+                  <th class="is-right"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filtered(); track item.id) {
+                  <tr [class.is-selected]="selectedId() === item.id" [class.is-busy]="busy() === item.id">
+                    <td>
+                      <button type="button" class="mg-risk-title" (click)="select(item)">
+                        <span class="mg-risk-type" [class]="'mg-risk-type mg-risk-type-' + typeTone(item.type)">
+                          <i class="ti" [class]="'ti ' + riskTypeIcon(item.type)"></i>
+                          {{ riskTypeLabel(item.type) }}
+                        </span>
+                        <span class="mg-risk-title-text">{{ item.title }}</span>
+                        <span class="mg-risk-title-ref">{{ item.ref }} · {{ item.businessUnit }}</span>
+                      </button>
+                    </td>
+                    <td><mg-badge [label]="item.severity" [tone]="priorityTone(item.severity)" /></td>
+                    <td>
+                      <select
+                        class="mg-row-status"
+                        [value]="item.status"
+                        [attr.aria-label]="'Change status for ' + item.ref"
+                        (change)="changeStatus(item, $any($event.target).value)"
+                      >
+                        @for (status of statuses; track status) {
+                          <option [value]="status">{{ riskStatusLabel(status) }}</option>
+                        }
+                      </select>
+                    </td>
+                    <td class="is-nowrap">{{ item.owner }}</td>
+                    <td class="is-nowrap" [class.mg-danger-text]="item.due < today && item.status !== 'closed'">
+                      {{ dueLabel(item.due) }}
+                    </td>
+                    <td class="is-right">
+                      <button type="button" class="mg-link-arrow" (click)="select(item)" aria-label="Inspect item">
+                        Inspect <i class="ti ti-chevron-right"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <mg-empty
+            title="Nothing matches this view"
+            message="Clear the filters, or register the item that is keeping you up at night."
+            icon="ti-filter-off"
+          />
+        }
+      </div>
+    </section>
+
+    <aside class="mg-risk-detail">
+      @if (selected(); as item) {
+        <section class="mg-card mg-risk-detail-card">
+          <div class="mg-risk-detail-head">
+            <div class="mg-risk-detail-top">
+              <span class="mg-risk-type" [class]="'mg-risk-type mg-risk-type-' + typeTone(item.type)">
+                <i class="ti" [class]="'ti ' + riskTypeIcon(item.type)"></i>
+                {{ riskTypeLabel(item.type) }}
+              </span>
+              <mg-badge [label]="riskStatusLabel(item.status)" [tone]="riskStatusTone(item.status)" />
+            </div>
+            <span class="mg-risk-detail-ref">{{ item.ref }}</span>
+            <h2>{{ item.title }}</h2>
+            <span class="mg-risk-detail-updated">Updated {{ formatDate(item.updatedAt.slice(0, 10), { day: 'numeric', month: 'short' }) }}</span>
+          </div>
+
+          <div class="mg-card-body">
+            @if (item.decisionNeeded) {
+              <div class="mg-decision-callout">
+                <i class="ti ti-scale"></i>
+                <div>
+                  <strong>Decision required</strong>
+                  <span>This item needs an explicit trade-off from leadership.</span>
+                </div>
+              </div>
+            }
+
+            <dl class="mg-risk-facts">
+              <div><dt>Owner</dt><dd>{{ item.owner }}</dd></div>
+              <div><dt>Business unit</dt><dd>{{ item.businessUnit }}</dd></div>
+              <div><dt>Due</dt><dd [class.mg-danger-text]="item.due < today && item.status !== 'closed'">{{ dueLabel(item.due) }}</dd></div>
+              <div><dt>Framework</dt><dd>{{ item.framework }}</dd></div>
+              <div class="is-wide"><dt>Control</dt><dd>{{ item.control }}</dd></div>
+              <div class="is-wide"><dt>Exposure</dt><dd>{{ item.exposure }}</dd></div>
+            </dl>
+
+            @if (item.notes) {
+              <div class="mg-risk-notes">
+                <span class="mg-risk-notes-label">Notes & evidence</span>
+                <p>{{ item.notes }}</p>
+              </div>
+            }
+
+            <div class="mg-risk-status-actions">
+              <span class="mg-label">Move the item</span>
+              <div class="mg-filter-row">
+                @for (status of statuses; track status) {
+                  <button
+                    type="button"
+                    class="mg-chip"
+                    [class.is-active]="item.status === status"
+                    (click)="changeStatus(item, status)"
+                  >
+                    {{ riskStatusLabel(status) }}
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+      } @else {
+        <section class="mg-card">
+          <mg-empty
+            title="Select an item"
+            message="Choose a line in the register to see the exposure, the control, and the evidence."
+            icon="ti-file-search"
+          />
+        </section>
+      }
+    </aside>
+  </div>
+
+  @if (notice()) {
+    <div class="mg-toast" role="status">
+      <i class="ti ti-circle-check"></i>
+      {{ notice() }}
+    </div>
+  }
+</div>

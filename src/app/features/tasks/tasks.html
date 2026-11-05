@@ -1,0 +1,197 @@
+<div class="mg-page mg-tasks">
+  <header class="mg-page-head">
+    <div>
+      <span class="mg-eyebrow"><i class="ti ti-checklist"></i> Execution board</span>
+      <h1 class="mg-page-title">The day’s work, <em>in plain sight</em>.</h1>
+      <p class="mg-page-subtitle">
+        Small, dated, owned moves. Trust is built when the work is visible before anyone asks for a status update.
+      </p>
+    </div>
+    <div class="mg-page-actions">
+      <button type="button" class="mg-btn mg-btn-primary" (click)="toggleAdd()">
+        <i class="ti" [class]="'ti ' + (addOpen() ? 'ti-x' : 'ti-plus')"></i>
+        {{ addOpen() ? 'Close form' : 'New task' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="mg-task-stats" aria-label="Task summary">
+    <article class="mg-task-stat">
+      <span class="mg-task-stat-label">Open</span>
+      <strong>{{ stats().open }}</strong>
+      <span class="mg-task-stat-hint">Across every lane</span>
+    </article>
+    <article class="mg-task-stat is-azure">
+      <span class="mg-task-stat-label">Due today</span>
+      <strong>{{ stats().dueToday }}</strong>
+      <span class="mg-task-stat-hint">Protect the focus block</span>
+    </article>
+    <article class="mg-task-stat is-red">
+      <span class="mg-task-stat-label">Overdue</span>
+      <strong>{{ stats().overdue }}</strong>
+      <span class="mg-task-stat-hint">Decide or re-date</span>
+    </article>
+    <article class="mg-task-stat is-green">
+      <span class="mg-task-stat-label">Done</span>
+      <strong>{{ stats().done }}</strong>
+      <span class="mg-task-stat-hint">Evidence over intention</span>
+    </article>
+  </section>
+
+  @if (addOpen()) {
+    <section class="mg-card mg-add-task">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-plus"></i> Add a task</h2>
+          <p class="mg-card-sub">One outcome, one owner, one date. The reference is assigned automatically.</p>
+        </div>
+      </div>
+      <div class="mg-card-body">
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="mg-form-row">
+            <label class="mg-field mg-field-wide">
+              <span class="mg-label">Task</span>
+              <input
+                class="mg-input"
+                formControlName="title"
+                placeholder="What will be different when this is done?"
+                maxlength="160"
+              />
+              @if (form.controls.title.touched && form.controls.title.invalid) {
+                <span class="mg-field-error">Give the task a clear title.</span>
+              }
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Due</span>
+              <input class="mg-input" type="date" formControlName="due" />
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Priority</span>
+              <select class="mg-select" formControlName="priority">
+                @for (priority of priorities; track priority) {
+                  <option [value]="priority">{{ priority }}</option>
+                }
+              </select>
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Workstream</span>
+              <select class="mg-select" formControlName="workstream">
+                @for (workstream of workstreams; track workstream) {
+                  <option [value]="workstream">{{ workstreamMeta(workstream).label }}</option>
+                }
+              </select>
+            </label>
+          </div>
+          <label class="mg-field mg-notes-field">
+            <span class="mg-label">Context / definition of done</span>
+            <textarea
+              class="mg-textarea"
+              formControlName="notes"
+              rows="2"
+              placeholder="What evidence closes this? What decision does it support?"
+            ></textarea>
+          </label>
+          <div class="mg-form-actions">
+            <button type="submit" class="mg-btn mg-btn-primary">
+              <i class="ti ti-check"></i>
+              Add to board
+            </button>
+            <button type="button" class="mg-btn mg-btn-ghost" (click)="toggleAdd()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  }
+
+  <div class="mg-task-toolbar">
+    <div class="mg-segmented" role="group" aria-label="Filter tasks">
+      @for (value of filterOptions; track value) {
+        <button type="button" [class.is-active]="filter() === value" (click)="filter.set(value)">
+          {{ filterLabel(value) }}
+        </button>
+      }
+    </div>
+    <label class="mg-search">
+      <i class="ti ti-search" aria-hidden="true"></i>
+      <input
+        class="mg-input"
+        type="search"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+        placeholder="Search reference, title, owner"
+        aria-label="Search tasks"
+      />
+    </label>
+  </div>
+
+  <div class="mg-board">
+    @for (column of columns(); track column.status) {
+      <section class="mg-board-col" [class]="'mg-board-col mg-col-' + column.status">
+        <header class="mg-board-col-head">
+          <div class="mg-board-col-title">
+            <span class="mg-board-dot" [class]="'mg-board-dot mg-dot-' + column.tone" aria-hidden="true"></span>
+            <h2>{{ column.label }}</h2>
+            <span class="mg-board-count">{{ column.tasks.length }}</span>
+          </div>
+        </header>
+        <div class="mg-board-col-body">
+          @for (task of column.tasks; track task.id) {
+            <article class="mg-task-card" [class.is-busy]="busy() === task.id">
+              <div class="mg-task-card-top">
+                <span class="mg-task-ref">{{ task.ref }}</span>
+                <mg-badge [label]="task.priority" [tone]="priorityTone(task.priority)" />
+              </div>
+              <h3 class="mg-task-title">{{ task.title }}</h3>
+              <div class="mg-task-meta">
+                <span [class.mg-danger-text]="task.due < today && task.status !== 'done'">
+                  <i class="ti ti-calendar"></i>
+                  {{ dueLabel(task.due) }}
+                </span>
+                <span><i class="ti ti-user"></i> {{ task.owner }}</span>
+              </div>
+              <span class="mg-task-ws">
+                <i class="ti" [class]="'ti ' + workstreamMeta(task.workstream).icon"></i>
+                {{ workstreamMeta(task.workstream).label }}
+              </span>
+              @if (task.notes) {
+                <p class="mg-task-notes">{{ task.notes }}</p>
+              }
+              <div class="mg-task-foot">
+                <select
+                  class="mg-task-status"
+                  [value]="task.status"
+                  [attr.aria-label]="'Change status for ' + task.ref"
+                  (change)="changeStatus(task, $any($event.target).value)"
+                >
+                  @for (status of taskStatuses; track status) {
+                    <option [value]="status">{{ taskStatusLabel(status) }}</option>
+                  }
+                </select>
+                <button
+                  type="button"
+                  class="mg-task-delete"
+                  (click)="remove(task)"
+                  [attr.aria-label]="'Delete ' + task.ref"
+                >
+                  <i class="ti ti-trash"></i>
+                </button>
+              </div>
+            </article>
+          } @empty {
+            <p class="mg-board-empty">
+              <i class="ti ti-circle-check"></i>
+              Nothing in this lane. Keep it that way with early decisions.
+            </p>
+          }
+        </div>
+      </section>
+    }
+  </div>
+
+  @if (notice()) {
+    <div class="mg-toast" role="status">
+      <i class="ti ti-circle-check"></i>
+      {{ notice() }}
+    </div>
+  }
+</div>

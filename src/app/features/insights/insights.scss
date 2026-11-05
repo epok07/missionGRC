@@ -1,0 +1,344 @@
+:host {
+  display: block;
+}
+
+.mg-page-title em {
+  color: #1f7a5c;
+  font-style: italic;
+}
+
+.mg-library-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid #dedfd5;
+  border-radius: 999px;
+  background: #fffefb;
+  color: #66776e;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.mg-library-count .ti {
+  color: #4e7f6a;
+  font-size: 0.85rem;
+}
+
+/* ------------------------------------------------------------------- hero */
+
+.mg-insight-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.7fr);
+  gap: 0.85rem;
+  align-items: stretch;
+}
+
+.mg-insight-feature {
+  display: flex;
+  min-height: 280px;
+}
+
+.mg-insight-feature mg-insight-card {
+  display: flex;
+  width: 100%;
+}
+
+.mg-insight-guide .mg-card-body {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 3.2rem);
+}
+
+.mg-guide-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.mg-guide-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.mg-guide-number {
+  flex: 0 0 auto;
+  padding-top: 0.05rem;
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: #9cb3a6;
+}
+
+.mg-guide-item strong {
+  display: block;
+  font-size: 0.72rem;
+  color: #2b473b;
+}
+
+.mg-guide-item p {
+  margin: 0.12rem 0 0;
+  font-size: 0.65rem;
+  line-height: 1.45;
+  color: #89928c;
+}
+
+.mg-guide-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.8rem;
+  border-top: 1px solid #efeee7;
+}
+
+.mg-guide-stats strong {
+  display: block;
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1f4b3a;
+}
+
+.mg-guide-stats span {
+  display: block;
+  margin-top: 0.05rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #959d97;
+}
+
+/* ---------------------------------------------------------------- toolbar */
+
+.mg-insight-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.mg-insight-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.mg-status-select .mg-select {
+  width: 9.5rem;
+  padding-top: 0.36rem;
+  padding-bottom: 0.36rem;
+  font-size: 0.7rem;
+}
+
+.mg-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: min(230px, 100%);
+}
+
+.mg-search .ti {
+  position: absolute;
+  left: 0.62rem;
+  color: #93a09a;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.mg-search .mg-input {
+  padding-left: 1.85rem;
+  font-size: 0.72rem;
+}
+
+/* ---------------------------------------------------------------- library */
+
+.mg-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 0.7rem;
+}
+
+.mg-library-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid var(--mg-line);
+  border-radius: 13px;
+  background: var(--mg-paper-strong);
+  box-shadow: var(--mg-shadow-sm);
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.mg-library-card:hover {
+  border-color: #cfdacf;
+  box-shadow: 0 10px 24px -18px rgba(20, 60, 43, 0.4);
+  transform: translateY(-1px);
+}
+
+.mg-library-card.is-featured {
+  border-color: #b7dcc8;
+  background: #fbfdf9;
+  box-shadow: inset 3px 0 0 #4a9a78;
+}
+
+.mg-library-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.mg-library-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.38rem;
+  border-radius: 4px;
+  background: #eaf2f8;
+  color: #2c7099;
+  font-size: 0.53rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mg-library-kind.is-quote {
+  background: #f3edf7;
+  color: #774a92;
+}
+
+.mg-library-kind .ti {
+  font-size: 0.65rem;
+}
+
+.mg-library-audience {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #9aa29c;
+}
+
+.mg-library-text {
+  margin: 0.6rem 0 0;
+  flex: 1;
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-size: 0.92rem;
+  font-weight: 450;
+  line-height: 1.38;
+  color: #29463a;
+  cursor: pointer;
+}
+
+.mg-library-card.is-featured .mg-library-text {
+  color: #173f30;
+}
+
+.mg-library-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid #f0efe7;
+}
+
+.mg-library-source {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #98a09a;
+}
+
+.mg-library-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.mg-library-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.22rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: #6f8a7c;
+  font-size: 0.56rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mg-library-btn:hover {
+  background: #f2f4ee;
+  color: #17624a;
+}
+
+.mg-library-btn .ti {
+  font-size: 0.7rem;
+}
+
+/* ----------------------------------------------------------------- toast */
+
+.mg-toast {
+  position: fixed;
+  right: 1.4rem;
+  bottom: 1.4rem;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 9px;
+  background: #123a2d;
+  color: #ecf8f1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  box-shadow: 0 16px 34px -16px rgba(8, 32, 22, 0.6);
+  animation: mg-slide-in 240ms ease both;
+}
+
+.mg-toast .ti {
+  color: #79d6ad;
+  font-size: 0.95rem;
+}
+
+@keyframes mg-slide-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1050px) {
+  .mg-insight-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mg-insight-feature {
+    min-height: 240px;
+  }
+}
+
+@media (max-width: 700px) {
+  .mg-insight-toolbar-right {
+    width: 100%;
+  }
+
+  .mg-search {
+    flex: 1;
+    width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .mg-library-grid {
+    grid-template-columns: 1fr;
+  }
+}

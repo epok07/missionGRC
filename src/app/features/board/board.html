@@ -1,0 +1,186 @@
+<div class="mg-page mg-board-page">
+  <header class="mg-page-head">
+    <div>
+      <span class="mg-eyebrow"><i class="ti ti-presentation"></i> Board room</span>
+      <h1 class="mg-page-title">Leaders want answers, <em>not just frameworks</em>.</h1>
+      <p class="mg-page-subtitle">
+        Translate risk into revenue, timing, and choices. Every pre-read should make the decision easier to take.
+      </p>
+    </div>
+    <div class="mg-page-actions">
+      @if (selected()) {
+        <button type="button" class="mg-btn mg-btn-primary" (click)="editing() ? cancelEdit() : beginEdit()">
+          <i class="ti" [class]="'ti ' + (editing() ? 'ti-x' : 'ti-pencil')"></i>
+          {{ editing() ? 'Close editor' : 'Edit brief' }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <section class="mg-board-stats" aria-label="Board brief summary">
+    <article class="mg-board-stat">
+      <span>Briefs on file</span>
+      <strong>{{ stats().total }}</strong>
+      <small>Executive narratives</small>
+    </article>
+    <article class="mg-board-stat is-indigo">
+      <span>Decisions requested</span>
+      <strong>{{ stats().decisions }}</strong>
+      <small>Across all briefs</small>
+    </article>
+    <article class="mg-board-stat is-green">
+      <span>Final</span>
+      <strong>{{ stats().final }}</strong>
+      <small>Ready for the room</small>
+    </article>
+    <article class="mg-board-stat is-orange">
+      <span>Next session</span>
+      <strong class="is-date">
+        {{ stats().next ? formatDate(stats().next?.date ?? '', { day: 'numeric', month: 'short' }) : '—' }}
+      </strong>
+      <small>{{ stats().next ? stats().next?.audience : 'No session scheduled' }}</small>
+    </article>
+  </section>
+
+  <div class="mg-board-grid">
+    <section class="mg-card mg-brief-list-card">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-files"></i> The narrative shelf</h2>
+          <p class="mg-card-sub">One brief, one audience, one decision set.</p>
+        </div>
+      </div>
+      <div class="mg-card-body mg-brief-list">
+        @if (state().length) {
+          @for (brief of state(); track brief.id) {
+            <button
+              type="button"
+              class="mg-brief-list-item"
+              [class.is-selected]="selectedId() === brief.id"
+              (click)="select(brief)"
+            >
+              <span class="mg-brief-list-top">
+                <span class="mg-brief-ref">{{ brief.ref }}</span>
+                <mg-badge [label]="brief.status" [tone]="boardStatusTone(brief.status)" />
+              </span>
+              <strong>{{ brief.title }}</strong>
+              <span class="mg-brief-list-meta">
+                <span><i class="ti ti-calendar"></i> {{ formatDate(brief.date, { day: 'numeric', month: 'short' }) }}</span>
+                <span><i class="ti ti-users"></i> {{ brief.audience }}</span>
+              </span>
+              <span class="mg-brief-list-decisions">
+                <i class="ti ti-scale"></i>
+                {{ decisionCount(brief) }}
+              </span>
+            </button>
+          }
+        } @else {
+          <mg-empty title="No board briefs" message="Start with the decision you need the board to make." icon="ti-presentation" />
+        }
+      </div>
+    </section>
+
+    <section class="mg-card mg-brief-detail">
+      @if (selected(); as brief) {
+        @if (editing()) {
+          <div class="mg-brief-editor">
+            <div class="mg-brief-editor-head">
+              <span class="mg-eyebrow"><i class="ti ti-pencil"></i> Editing {{ brief.ref }}</span>
+              <h2>Shape the narrative</h2>
+              <p>Lead with the ask. Put the framework detail in the body, not the opening line.</p>
+            </div>
+            <form [formGroup]="form" (ngSubmit)="save()">
+              <div class="mg-form-row">
+                <label class="mg-field mg-field-wide">
+                  <span class="mg-label">Title</span>
+                  <input class="mg-input" formControlName="title" maxlength="180" />
+                </label>
+                <label class="mg-field">
+                  <span class="mg-label">Date</span>
+                  <input class="mg-input" type="date" formControlName="date" />
+                </label>
+                <label class="mg-field">
+                  <span class="mg-label">Audience</span>
+                  <input class="mg-input" formControlName="audience" />
+                </label>
+                <label class="mg-field">
+                  <span class="mg-label">Status</span>
+                  <select class="mg-select" formControlName="status">
+                    @for (status of statuses; track status) {
+                      <option [value]="status">{{ status }}</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              <label class="mg-field mg-editor-field">
+                <span class="mg-label">Decisions requested (one per line)</span>
+                <textarea class="mg-textarea" formControlName="decisions" rows="4"></textarea>
+              </label>
+              <label class="mg-field mg-editor-field">
+                <span class="mg-label">Body (Markdown)</span>
+                <textarea class="mg-textarea mg-markdown-editor" formControlName="body" rows="16"></textarea>
+                <span class="mg-help">Use ## headings, - bullets, and short paragraphs. Rendered safely from Markdown.</span>
+              </label>
+              <div class="mg-form-actions">
+                <button type="submit" class="mg-btn mg-btn-primary" [disabled]="saving()">
+                  <i class="ti ti-device-floppy"></i>
+                  {{ saving() ? 'Saving…' : 'Save brief' }}
+                </button>
+                <button type="button" class="mg-btn mg-btn-ghost" (click)="cancelEdit()">Cancel</button>
+              </div>
+            </form>
+          </div>
+        } @else {
+          <div class="mg-brief-view">
+            <header class="mg-brief-header">
+              <div class="mg-brief-header-top">
+                <span class="mg-brief-ref">{{ brief.ref }}</span>
+                <mg-badge [label]="brief.status" [tone]="boardStatusTone(brief.status)" />
+              </div>
+              <span class="mg-brief-audience">{{ brief.audience }}</span>
+              <h2>{{ brief.title }}</h2>
+              <div class="mg-brief-meta">
+                <span><i class="ti ti-calendar"></i> {{ formatDate(brief.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+                <span><i class="ti ti-user"></i> {{ brief.owner }}</span>
+              </div>
+            </header>
+
+            @if (brief.decisions.length) {
+              <div class="mg-brief-decisions">
+                <span class="mg-brief-section-label"><i class="ti ti-scale"></i> Decisions requested</span>
+                <ol>
+                  @for (decision of brief.decisions; track decision) {
+                    <li>{{ decision }}</li>
+                  }
+                </ol>
+              </div>
+            }
+
+            <div class="mg-board-body" [innerHTML]="brief.bodyHtml"></div>
+
+            <footer class="mg-brief-footer">
+              <span><i class="ti ti-file-text"></i> Rendered from Markdown</span>
+              <button type="button" class="mg-text-btn" (click)="beginEdit()">
+                <i class="ti ti-pencil"></i>
+                Edit this brief
+              </button>
+            </footer>
+          </div>
+        }
+      } @else {
+        <mg-empty
+          title="Select a brief"
+          message="Choose a narrative from the shelf to see the ask, the context, and the decisions requested."
+          icon="ti-file-search"
+        />
+      }
+    </section>
+  </div>
+
+  @if (notice()) {
+    <div class="mg-toast" role="status">
+      <i class="ti ti-circle-check"></i>
+      {{ notice() }}
+    </div>
+  }
+</div>

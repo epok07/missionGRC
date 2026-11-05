@@ -1,0 +1,263 @@
+<div class="mg-page mg-objectives">
+  <header class="mg-page-head">
+    <div>
+      <span class="mg-eyebrow"><i class="ti ti-target-arrow"></i> Daily objectives</span>
+      <h1 class="mg-page-title">Set the pace. <em>Finish with evidence.</em></h1>
+      <p class="mg-page-subtitle">
+        A day without a stated intent is a day of noise. Three honest objectives beat a page of good intentions.
+      </p>
+    </div>
+    <div class="mg-page-actions">
+      <div class="mg-date-nav">
+        <button type="button" class="mg-icon-btn" (click)="shiftDay(-1)" aria-label="Previous day">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <label class="mg-date-picker">
+          <i class="ti ti-calendar"></i>
+          <input type="date" [value]="state().date" (change)="onDateChange($any($event.target).value)" aria-label="Choose a day" />
+        </label>
+        <button type="button" class="mg-icon-btn" (click)="shiftDay(1)" aria-label="Next day">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+      <button type="button" class="mg-btn mg-btn-secondary" (click)="goToday()" [disabled]="isToday()">
+        <i class="ti ti-calendar-check"></i>
+        Today
+      </button>
+    </div>
+  </header>
+
+  <section class="mg-intent-hero">
+    <div class="mg-intent-copy">
+      <span class="mg-intent-kicker">
+        <i class="ti ti-compass"></i>
+        {{ isToday() ? 'Today’s intent' : 'Intent on record' }} ·
+        {{ formatDate(state().date, { weekday: 'long', day: 'numeric', month: 'long' }) }}
+      </span>
+      @if (editingIntent()) {
+        <textarea
+          class="mg-intent-input"
+          [value]="intentDraft()"
+          (input)="intentDraft.set($any($event.target).value)"
+          maxlength="280"
+          rows="2"
+          aria-label="Daily intent"
+        ></textarea>
+        <div class="mg-intent-actions">
+          <button type="button" class="mg-btn mg-btn-primary mg-btn-sm" (click)="saveIntent()" [disabled]="savingIntent()">
+            {{ savingIntent() ? 'Saving…' : 'Save intent' }}
+          </button>
+          <button type="button" class="mg-btn mg-btn-ghost mg-btn-sm" (click)="editingIntent.set(false)">Cancel</button>
+          <span class="mg-intent-count">{{ intentDraft().length }}/280</span>
+        </div>
+      } @else {
+        <p class="mg-intent-text">
+          {{ state().intent || 'What decision should today make easier? Write the sentence you want to be true by 17:00.' }}
+        </p>
+        <button type="button" class="mg-intent-edit" (click)="beginIntent()">
+          <i class="ti ti-pencil"></i>
+          {{ state().intent ? 'Edit intent' : 'Set the intent' }}
+        </button>
+      }
+    </div>
+    <div class="mg-intent-meter">
+      <mg-progress-ring
+        [value]="completion()"
+        [size]="88"
+        label="Objectives complete"
+        color="#7bd8b1"
+        labelColor="#f0faf5"
+      />
+      <div class="mg-intent-meter-copy">
+        <strong>{{ done() }}<small>/{{ total() }}</small></strong>
+        <span>objectives complete</span>
+        <span class="mg-intent-meter-note">{{ completion() }}% of the day’s stated intent</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="mg-obj-stats" aria-label="Objective summary">
+    <article class="mg-obj-stat">
+      <span>Objectives</span>
+      <strong>{{ total() }}</strong>
+      <small>stated for this day</small>
+    </article>
+    <article class="mg-obj-stat is-green">
+      <span>Complete</span>
+      <strong>{{ done() }}</strong>
+      <small>with evidence</small>
+    </article>
+    <article class="mg-obj-stat is-azure">
+      <span>Still open</span>
+      <strong>{{ total() - done() }}</strong>
+      <small>decide or re-date</small>
+    </article>
+    <article class="mg-obj-stat is-orange">
+      <span>Streak</span>
+      <strong>{{ streak() }}<small>d</small></strong>
+      <small>days with a completed objective</small>
+    </article>
+  </section>
+
+  <div class="mg-obj-grid">
+    <section class="mg-card mg-obj-card">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-list-check"></i> The day’s commitments</h2>
+          <p class="mg-card-sub">Each objective needs an owner: you. Each done needs a trace.</p>
+        </div>
+        <span class="mg-obj-progress-label">{{ completion() }}%</span>
+      </div>
+      <div class="mg-card-body">
+        @if (state().objectives.length) {
+          <div class="mg-objective-list">
+            @for (objective of state().objectives; track objective.id) {
+              <article
+                class="mg-objective-row"
+                [class.is-done]="objective.done"
+                [class.is-busy]="busyObjective() === objective.id"
+              >
+                <button
+                  type="button"
+                  class="mg-objective-check"
+                  (click)="toggle(objective)"
+                  [attr.aria-label]="(objective.done ? 'Reopen: ' : 'Complete: ') + objective.text"
+                  [attr.aria-pressed]="objective.done"
+                >
+                  <i class="ti ti-check"></i>
+                </button>
+
+                <div class="mg-objective-main">
+                  @if (editingId() === objective.id) {
+                    <div class="mg-objective-edit">
+                      <input
+                        class="mg-input"
+                        [value]="editDraft()"
+                        (input)="editDraft.set($any($event.target).value)"
+                        maxlength="220"
+                        aria-label="Objective text"
+                      />
+                      <button type="button" class="mg-btn mg-btn-primary mg-btn-sm" (click)="saveEdit(objective)" [disabled]="savingEdit()">
+                        Save
+                      </button>
+                      <button type="button" class="mg-btn mg-btn-ghost mg-btn-sm" (click)="cancelEdit()">Cancel</button>
+                    </div>
+                  } @else {
+                    <p class="mg-objective-text">{{ objective.text }}</p>
+                  }
+                  <span class="mg-objective-cat">
+                    <i class="ti" [class]="'ti ' + objectiveCategoryMeta(objective.category).icon"></i>
+                    {{ objectiveCategoryMeta(objective.category).label }}
+                  </span>
+                </div>
+
+                <div class="mg-objective-actions">
+                  <span class="mg-objective-state">{{ objective.done ? 'Done' : 'Open' }}</span>
+                  @if (editingId() !== objective.id) {
+                    <button type="button" class="mg-objective-icon" (click)="beginEdit(objective)" aria-label="Edit objective">
+                      <i class="ti ti-pencil"></i>
+                    </button>
+                  }
+                  <button type="button" class="mg-objective-icon is-danger" (click)="remove(objective)" aria-label="Remove objective">
+                    <i class="ti ti-trash"></i>
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <mg-empty
+            title="No objectives for this day"
+            message="Start with the one outcome that would make the day worth remembering."
+            icon="ti-target-arrow"
+          />
+        }
+
+        <form class="mg-objective-add" [formGroup]="form" (ngSubmit)="add()">
+          <label class="mg-field mg-objective-add-text">
+            <span class="mg-label">Add an objective</span>
+            <input class="mg-input" formControlName="text" placeholder="What will be true by the end of this day?" maxlength="220" />
+            @if (form.controls.text.touched && form.controls.text.invalid) {
+              <span class="mg-field-error">Write the objective before adding it.</span>
+            }
+          </label>
+          <label class="mg-field">
+            <span class="mg-label">Category</span>
+            <select class="mg-select" formControlName="category">
+              @for (category of categories; track category) {
+                <option [value]="category">{{ objectiveCategoryMeta(category).label }}</option>
+              }
+            </select>
+          </label>
+          <button type="submit" class="mg-btn mg-btn-primary">
+            <i class="ti ti-plus"></i>
+            Add
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <aside class="mg-obj-aside">
+      <section class="mg-card mg-ledger-card">
+        <div class="mg-card-head">
+          <div>
+            <h2 class="mg-card-title"><i class="ti ti-chart-histogram"></i> Consistency ledger</h2>
+            <p class="mg-card-sub">Trust compounds in small, documented days.</p>
+          </div>
+        </div>
+        <div class="mg-card-body">
+          <div class="mg-history">
+            @for (point of history(); track point.date) {
+              <div class="mg-history-col" [class.is-today]="point.date === today" [title]="point.date + ': ' + point.done + ' of ' + point.total">
+                <div class="mg-history-track">
+                  <span [style.height.%]="barHeight(point)"></span>
+                </div>
+                <small>{{ dayLabel(point.date) }}</small>
+              </div>
+            }
+          </div>
+          <div class="mg-history-legend">
+            <span><i class="mg-legend-dot"></i> Objectives completed</span>
+            <span>{{ history().length }} days</span>
+          </div>
+
+          <div class="mg-ledger-stats">
+            <div>
+              <strong>{{ streak() }}<small>d</small></strong>
+              <span>Current streak</span>
+            </div>
+            <div>
+              <strong>{{ weekRate() }}<small>%</small></strong>
+              <span>Last 7 days</span>
+            </div>
+            <div>
+              <strong>{{ completion() }}<small>%</small></strong>
+              <span>This day</span>
+            </div>
+          </div>
+
+          <p class="mg-ledger-quote">
+            “Trust is the real currency in governance, risk, and compliance.”
+          </p>
+        </div>
+      </section>
+
+      <section class="mg-card mg-obj-hint">
+        <div class="mg-card-body">
+          <span class="mg-obj-hint-icon"><i class="ti ti-bulb"></i></span>
+          <div>
+            <strong>Make it decision-shaped</strong>
+            <p>“Close the evidence loop” beats “work on vendor review.” Name the outcome, the owner, and the evidence.</p>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  @if (notice()) {
+    <div class="mg-toast" role="status">
+      <i class="ti ti-circle-check"></i>
+      {{ notice() }}
+    </div>
+  }
+</div>

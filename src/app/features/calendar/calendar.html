@@ -1,0 +1,234 @@
+<div class="mg-page mg-calendar">
+  <header class="mg-page-head">
+    <div>
+      <span class="mg-eyebrow"><i class="ti ti-calendar-event"></i> Decision room</span>
+      <h1 class="mg-page-title">Meetings are where risk <em>becomes a choice</em>.</h1>
+      <p class="mg-page-subtitle">
+        A calendar is not a schedule. It is the record of when we chose to be accountable, and to whom.
+      </p>
+    </div>
+    <div class="mg-page-actions">
+      <button type="button" class="mg-btn mg-btn-secondary" (click)="goToday()">
+        <i class="ti ti-calendar-check"></i>
+        Today
+      </button>
+      <button type="button" class="mg-btn mg-btn-primary" (click)="toggleAdd()">
+        <i class="ti" [class]="'ti ' + (addOpen() ? 'ti-x' : 'ti-plus')"></i>
+        {{ addOpen() ? 'Close form' : 'New meeting' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="mg-cal-stats" aria-label="Meeting summary">
+    <article class="mg-cal-stat">
+      <span class="mg-cal-stat-icon"><i class="ti ti-calendar-month"></i></span>
+      <div><strong>{{ stats().month }}</strong><span>Meetings this month</span></div>
+    </article>
+    <article class="mg-cal-stat is-indigo">
+      <span class="mg-cal-stat-icon"><i class="ti ti-scale"></i></span>
+      <div><strong>{{ stats().decisions }}</strong><span>Decision rooms</span></div>
+    </article>
+    <article class="mg-cal-stat is-orange">
+      <span class="mg-cal-stat-icon"><i class="ti ti-building-bank"></i></span>
+      <div><strong>{{ stats().vendors }}</strong><span>Vendor reviews</span></div>
+    </article>
+    <article class="mg-cal-stat is-azure">
+      <span class="mg-cal-stat-icon"><i class="ti ti-clipboard-check"></i></span>
+      <div><strong>{{ stats().audits }}</strong><span>Audit checkpoints</span></div>
+    </article>
+  </section>
+
+  @if (addOpen()) {
+    <section class="mg-card mg-add-meeting">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-calendar-plus"></i> Schedule a meeting</h2>
+          <p class="mg-card-sub">Name the decision, not just the topic. The right people will know why they are there.</p>
+        </div>
+      </div>
+      <div class="mg-card-body">
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="mg-form-row">
+            <label class="mg-field mg-field-wide">
+              <span class="mg-label">Title</span>
+              <input class="mg-input" formControlName="title" placeholder="Decision room: what must be decided?" />
+              @if (form.controls.title.touched && form.controls.title.invalid) {
+                <span class="mg-field-error">Give the meeting a title.</span>
+              }
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Date</span>
+              <input class="mg-input" type="date" formControlName="date" />
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Start</span>
+              <input class="mg-input" type="time" formControlName="start" />
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">End</span>
+              <input class="mg-input" type="time" formControlName="end" />
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Type</span>
+              <select class="mg-select" formControlName="type">
+                @for (type of meetingTypes; track type) {
+                  <option [value]="type">{{ meetingTypeMeta(type).label }}</option>
+                }
+              </select>
+            </label>
+            <label class="mg-field">
+              <span class="mg-label">Location</span>
+              <input class="mg-input" formControlName="location" placeholder="Virtual / Room 4B" />
+            </label>
+          </div>
+          <div class="mg-form-row mg-form-row-pad">
+            <label class="mg-field">
+              <span class="mg-label">Attendees</span>
+              <input class="mg-input" formControlName="attendees" placeholder="Comma separated names" />
+            </label>
+            <label class="mg-field mg-field-wide">
+              <span class="mg-label">The question to ask</span>
+              <input class="mg-input" formControlName="notes" placeholder="What decision should leave the room?" />
+            </label>
+          </div>
+          <div class="mg-form-actions">
+            <button type="submit" class="mg-btn mg-btn-primary"><i class="ti ti-check"></i> Add to calendar</button>
+            <button type="button" class="mg-btn mg-btn-ghost" (click)="toggleAdd()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  }
+
+  <div class="mg-cal-grid">
+    <section class="mg-card mg-cal-card">
+      <div class="mg-cal-head">
+        <button type="button" class="mg-icon-btn" (click)="changeMonth(-1)" aria-label="Previous month">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <div class="mg-cal-title">
+          <h2>{{ monthLabel() }}</h2>
+          <span>Select a day to open its agenda</span>
+        </div>
+        <button type="button" class="mg-icon-btn" (click)="changeMonth(1)" aria-label="Next month">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+
+      <div class="mg-cal-weekdays" aria-hidden="true">
+        @for (weekday of weekdays; track weekday) {
+          <span>{{ weekday }}</span>
+        }
+      </div>
+
+      <div class="mg-cal-days">
+        @for (day of days(); track day.date) {
+          <button
+            type="button"
+            class="mg-cal-day"
+            [class.is-outside]="!day.inMonth"
+            [class.is-today]="day.isToday"
+            [class.is-selected]="day.isSelected"
+            [class.has-meetings]="day.count > 0"
+            (click)="select(day.date)"
+            [attr.aria-label]="day.date + ', ' + day.count + ' meetings'"
+            [attr.aria-pressed]="day.isSelected"
+          >
+            <span class="mg-cal-day-number">{{ day.day }}</span>
+            @if (day.count) {
+              <span class="mg-cal-day-dots" aria-hidden="true">
+                @for (dot of dots(day.count); track dot) {
+                  <i></i>
+                }
+              </span>
+            }
+          </button>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card mg-agenda-card">
+      <div class="mg-card-head">
+        <div>
+          <span class="mg-agenda-kicker">{{ selected() === today ? 'Today' : 'Selected day' }}</span>
+          <h2 class="mg-card-title">{{ formatDate(selected(), { weekday: 'long', day: 'numeric', month: 'long' }) }}</h2>
+          <p class="mg-card-sub">
+            {{ selectedMeetings().length }}
+            {{ selectedMeetings().length === 1 ? 'conversation' : 'conversations' }} on the record.
+          </p>
+        </div>
+        <button type="button" class="mg-icon-btn" (click)="toggleAdd()" aria-label="Add meeting on this day">
+          <i class="ti ti-plus"></i>
+        </button>
+      </div>
+      <div class="mg-card-body">
+        @if (selectedMeetings().length) {
+          <div class="mg-agenda-list">
+            @for (meeting of selectedMeetings(); track meeting.id) {
+              <article class="mg-agenda-card-item" [class.is-busy]="busy() === meeting.id">
+                <div class="mg-agenda-time">
+                  <strong>{{ formatTime(meeting.start) }}</strong>
+                  <span>{{ formatTime(meeting.end) }}</span>
+                </div>
+                <div class="mg-agenda-main">
+                  <div class="mg-agenda-title-row">
+                    <h3>{{ meeting.title }}</h3>
+                    <mg-badge [label]="meetingTypeMeta(meeting.type).label" [tone]="meetingTypeMeta(meeting.type).tone" />
+                  </div>
+                  <div class="mg-agenda-meta">
+                    <span><i class="ti ti-map-pin"></i> {{ meeting.location }}</span>
+                    <span><i class="ti ti-users"></i> {{ meeting.attendees.length || 'No attendees yet' }}</span>
+                  </div>
+                  @if (meeting.notes) {
+                    <p class="mg-agenda-note">{{ meeting.notes }}</p>
+                  }
+                  @if (meeting.attendees.length) {
+                    <div class="mg-agenda-people">
+                      @for (person of meeting.attendees; track person) {
+                        <span>{{ person }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="mg-agenda-delete"
+                  (click)="remove(meeting)"
+                  [attr.aria-label]="'Delete ' + meeting.title"
+                >
+                  <i class="ti ti-trash"></i>
+                </button>
+              </article>
+            }
+          </div>
+        } @else {
+          <mg-empty
+            title="No meetings on this day"
+            message="Protect the space. A clear calendar is an invitation to think, not a gap to fill."
+            icon="ti-calendar-off"
+          />
+        }
+
+        @if (upcoming().length) {
+          <div class="mg-upcoming">
+            <span class="mg-upcoming-label">Next on the calendar</span>
+            @for (meeting of upcoming(); track meeting.id) {
+              <button type="button" class="mg-upcoming-item" (click)="select(meeting.date)">
+                <span class="mg-upcoming-date">{{ formatDate(meeting.date, { weekday: 'short', day: 'numeric', month: 'short' }) }}</span>
+                <span class="mg-upcoming-title">{{ meeting.title }}</span>
+                <span class="mg-upcoming-time">{{ formatTime(meeting.start) }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+
+  @if (notice()) {
+    <div class="mg-toast" role="status">
+      <i class="ti ti-circle-check"></i>
+      {{ notice() }}
+    </div>
+  }
+</div>

@@ -1,0 +1,420 @@
+<div class="mg-page mg-dashboard">
+  <section class="mg-hero">
+    <div class="mg-hero-copy">
+      <span class="mg-eyebrow"><i class="ti ti-sunrise"></i>{{ greetingText }}, {{ firstName() }}</span>
+      <h1 class="mg-hero-title">Make the day’s risk <em>decisions</em> explicit.</h1>
+      <p class="mg-hero-sub">
+        {{ formatDate(state().plan.date, { weekday: 'long', day: 'numeric', month: 'long' }) }} ·
+        One day at a time, trust is built through documented choices.
+      </p>
+
+      <div class="mg-intent-box">
+        <span class="mg-intent-label"><i class="ti ti-compass"></i> Today’s intent</span>
+        @if (editingIntent()) {
+          <div class="mg-intent-edit">
+            <input
+              class="mg-input"
+              [value]="intentDraft()"
+              (input)="intentDraft.set($any($event.target).value)"
+              maxlength="280"
+              aria-label="Today's intent"
+            />
+            <button class="mg-btn mg-btn-primary mg-btn-sm" type="button" (click)="saveIntent()" [disabled]="savingIntent()">
+              Save
+            </button>
+            <button class="mg-btn mg-btn-ghost mg-btn-sm" type="button" (click)="editingIntent.set(false)">Cancel</button>
+          </div>
+        } @else {
+          <div class="mg-intent-read">
+            <p>{{ state().plan.intent || 'Set the intention that should shape today’s decisions.' }}</p>
+            <button class="mg-intent-edit-btn" type="button" (click)="beginIntent()" aria-label="Edit today's intent">
+              <i class="ti ti-pencil"></i>
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="mg-hero-actions">
+        <a routerLink="/objectives" class="mg-btn mg-btn-primary">
+          <i class="ti ti-target-arrow"></i>
+          Open daily plan
+        </a>
+        <a routerLink="/risks" class="mg-btn mg-btn-secondary">
+          <i class="ti ti-alert-triangle"></i>
+          Review open items
+        </a>
+      </div>
+    </div>
+
+    <div class="mg-hero-trust">
+      <div class="mg-trust-top">
+        <mg-progress-ring [value]="state().pulse.trustScore" [size]="92" label="Trust balance" color="#7bd8b1" labelColor="#f0faf5" />
+        <div>
+          <span class="mg-trust-kicker">Trust balance</span>
+          <strong class="mg-trust-value">{{ state().pulse.trustScore }}<small>/100</small></strong>
+          <span class="mg-trust-caption">Evidence · follow-through · consistency</span>
+        </div>
+      </div>
+      <div class="mg-trust-grid">
+        <div>
+          <strong>{{ state().pulse.evidenceCoverage }}%</strong>
+          <span>Evidence coverage</span>
+        </div>
+        <div>
+          <strong>{{ state().pulse.streak }}<small>d</small></strong>
+          <span>Consistency streak</span>
+        </div>
+      </div>
+      <p class="mg-trust-note">
+        <i class="ti ti-info-circle"></i>
+        A transparent score, not a vanity metric. Every input is visible in the ledger below.
+      </p>
+    </div>
+  </section>
+
+  <section class="mg-metrics" aria-label="Daily metrics">
+    <mg-metric
+      label="Open items"
+      [value]="state().pulse.openItems"
+      hint="Risks, issues & decisions"
+      [detail]="state().pulse.criticalItems + ' critical'"
+      icon="ti-alert-triangle"
+      tone="red"
+    />
+    <mg-metric
+      label="Open tasks"
+      [value]="state().pulse.openTasks"
+      hint="Today’s execution load"
+      [detail]="state().pulse.doneToday + ' done today'"
+      icon="ti-checklist"
+      tone="azure"
+    />
+    <mg-metric
+      label="Overdue"
+      [value]="state().pulse.overdue"
+      hint="Needs a decision or a new date"
+      detail="Close the loop"
+      icon="ti-clock-exclamation"
+      tone="orange"
+    />
+    <mg-metric
+      label="Vendor actions"
+      [value]="state().pulse.vendorActions"
+      hint="Reviews due in 14 days"
+      detail="Before renewal"
+      icon="ti-building-bank"
+      tone="teal"
+    />
+  </section>
+
+  <div class="mg-dashboard-grid">
+    <section class="mg-card mg-span-7">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-target-arrow"></i> Today’s objectives</h2>
+          <p class="mg-card-sub">Set the pace. Complete the day with evidence, not intention alone.</p>
+        </div>
+        <div class="mg-objective-progress">
+          <span>{{ state().plan.completion }}%</span>
+          <div class="mg-progress"><span [style.width.%]="state().plan.completion"></span></div>
+        </div>
+      </div>
+      <div class="mg-card-body">
+        @if (state().plan.objectives.length) {
+          <div class="mg-objective-list">
+            @for (objective of state().plan.objectives; track objective.id) {
+              <button
+                type="button"
+                class="mg-objective"
+                [class.is-done]="objective.done"
+                [class.is-busy]="busyObjective() === objective.id"
+                (click)="toggleObjective(objective)"
+              >
+                <span class="mg-objective-check"><i class="ti ti-check"></i></span>
+                <span class="mg-objective-body">
+                  <span class="mg-objective-text">{{ objective.text }}</span>
+                  <span class="mg-objective-meta">
+                    <i class="ti" [class]="'ti ' + objectiveCategoryMeta(objective.category).icon"></i>
+                    {{ objectiveCategoryMeta(objective.category).label }}
+                  </span>
+                </span>
+                @if (objective.done) {
+                  <span class="mg-objective-done">Done</span>
+                }
+              </button>
+            }
+          </div>
+          <div class="mg-objective-footer">
+            <span>{{ state().pulse.objectivesDone }} of {{ state().pulse.objectivesTotal }} complete</span>
+            <a routerLink="/objectives" class="mg-card-link">Plan the rest <i class="ti ti-arrow-right"></i></a>
+          </div>
+        } @else {
+          <mg-empty
+            title="No objectives set"
+            message="A day without a stated intent is a day of noise. Set one objective to begin."
+            icon="ti-target-arrow"
+          />
+          <div class="mg-objective-footer">
+            <span>Start with one clear outcome.</span>
+            <a routerLink="/objectives" class="mg-card-link">Set the pace <i class="ti ti-arrow-right"></i></a>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card mg-span-5">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-calendar-event"></i> Decision room</h2>
+          <p class="mg-card-sub">Meetings are not interruptions. They are where risk becomes a choice.</p>
+        </div>
+        <a routerLink="/calendar" class="mg-card-link">Calendar <i class="ti ti-arrow-right"></i></a>
+      </div>
+      <div class="mg-card-body">
+        @if (meetingsToday().length) {
+          <div class="mg-agenda">
+            @for (meeting of meetingsToday(); track meeting.id) {
+              <article class="mg-agenda-item">
+                <div class="mg-agenda-time">
+                  <strong>{{ formatTime(meeting.start) }}</strong>
+                  <span>{{ formatTime(meeting.end) }}</span>
+                </div>
+                <div class="mg-agenda-body">
+                  <div class="mg-agenda-title">{{ meeting.title }}</div>
+                  <div class="mg-agenda-meta">
+                    <span class="mg-agenda-type">
+                      <i class="ti" [class]="'ti ' + meetingTypeMeta(meeting.type).icon"></i>
+                      {{ meetingTypeMeta(meeting.type).label }}
+                    </span>
+                    <span><i class="ti ti-users"></i> {{ meeting.attendees.length }}</span>
+                    <span><i class="ti ti-map-pin"></i> {{ meeting.location }}</span>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <mg-empty
+            title="No meetings today"
+            message="Protect the focus block. The next decision room is listed below."
+            icon="ti-calendar-check"
+          />
+        }
+
+        @if (meetingsNext().length) {
+          <div class="mg-next-up">
+            <span class="mg-next-label">Next up</span>
+            @for (meeting of meetingsNext(); track meeting.id) {
+              <div class="mg-next-item">
+                <span class="mg-next-date">{{ formatDate(meeting.date, { weekday: 'short', day: 'numeric', month: 'short' }) }}</span>
+                <span class="mg-next-title">{{ meeting.title }}</span>
+                <span class="mg-next-time">{{ formatTime(meeting.start) }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card mg-span-8">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-alert-triangle"></i> Open items</h2>
+          <p class="mg-card-sub">If it is not owned, dated, and evidenced, it is not managed.</p>
+        </div>
+        <a routerLink="/risks" class="mg-card-link">All open items <i class="ti ti-arrow-right"></i></a>
+      </div>
+      <div class="mg-card-body is-flush">
+        @if (state().risks.length) {
+          <div class="mg-table-wrap">
+            <table class="mg-table mg-open-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Severity</th>
+                  <th>Owner</th>
+                  <th>Due</th>
+                  <th class="is-right"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (risk of state().risks; track risk.id) {
+                  <tr>
+                    <td>
+                      <div class="mg-item-cell">
+                        <span class="mg-item-icon"><i class="ti" [class]="'ti ' + riskTypeIcon(risk.type)"></i></span>
+                        <span class="mg-item-text">
+                          <span class="mg-item-ref">{{ risk.ref }} · {{ riskTypeLabel(risk.type) }}</span>
+                          <span class="mg-item-title">{{ risk.title }}</span>
+                        </span>
+                      </div>
+                    </td>
+                    <td><mg-badge [label]="risk.severity" [tone]="priorityTone(risk.severity)" /></td>
+                    <td class="is-nowrap">{{ risk.owner }}</td>
+                    <td class="is-nowrap" [class.mg-danger-text]="risk.due < today">{{ dueLabel(risk.due) }}</td>
+                    <td class="is-right">
+                      <a routerLink="/risks" class="mg-link-arrow" aria-label="Open item">Open <i class="ti ti-chevron-right"></i></a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <mg-empty title="No open items" message="The workspace is clear. Keep it that way with early decisions." />
+        }
+      </div>
+    </section>
+
+    <div class="mg-span-4 mg-insight-slot">
+      <mg-insight-card
+        [insight]="state().insight"
+        [actionLabel]="loadingInsight() ? 'Loading a fresh prompt' : 'Show another prompt'"
+        (rotate)="rotateInsight()"
+      />
+    </div>
+
+    <section class="mg-card mg-span-5">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-building-bank"></i> Third-party watchlist</h2>
+          <p class="mg-card-sub">Third-party risk is where breaches often live.</p>
+        </div>
+        <a routerLink="/tprm" class="mg-card-link">TPRM <i class="ti ti-arrow-right"></i></a>
+      </div>
+      <div class="mg-card-body">
+        <div class="mg-vendor-list">
+          @for (vendor of state().vendors; track vendor.id) {
+            <article class="mg-vendor">
+              <div class="mg-vendor-top">
+                <div class="mg-vendor-name">
+                  <strong>{{ vendor.vendor }}</strong>
+                  <span>Tier {{ vendor.tier }} · {{ vendor.service }}</span>
+                </div>
+                <mg-badge [label]="vendorStatusLabel(vendor.status)" [tone]="vendorStatusTone(vendor.status)" />
+              </div>
+              <div class="mg-vendor-bottom">
+                <div class="mg-progress" [class.is-hot]="vendor.riskRating === 'critical'" [class.is-warm]="vendor.riskRating === 'high'">
+                  <span [style.width.%]="vendor.progress"></span>
+                </div>
+                <span class="mg-vendor-due" [class.mg-danger-text]="vendor.reviewDue < today">
+                  Review {{ dueLabel(vendor.reviewDue) }}
+                </span>
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card mg-span-4">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-presentation"></i> Board room</h2>
+          <p class="mg-card-sub">Leaders want answers, not just frameworks.</p>
+        </div>
+        <a routerLink="/board" class="mg-card-link">Briefs <i class="ti ti-arrow-right"></i></a>
+      </div>
+      <div class="mg-card-body">
+        @if (state().board; as board) {
+          <div class="mg-board-card">
+            <div class="mg-board-meta">
+              <span>{{ board.audience }}</span>
+              <mg-badge [label]="board.status" [tone]="boardStatusTone(board.status)" />
+            </div>
+            <h3>{{ board.title }}</h3>
+            <div class="mg-board-date">
+              <i class="ti ti-calendar"></i>
+              {{ formatDate(board.date, { weekday: 'short', day: 'numeric', month: 'long' }) }}
+            </div>
+            @if (board.decisions.length) {
+              <div class="mg-board-ask">
+                <span>Decision requested</span>
+                <p>{{ board.decisions[0] }}</p>
+              </div>
+            }
+            <a routerLink="/board" class="mg-card-link">Open the executive pre-read <i class="ti ti-arrow-up-right"></i></a>
+          </div>
+        } @else {
+          <mg-empty title="No board brief" message="Start with the decision you need the board to make." icon="ti-presentation" />
+        }
+      </div>
+    </section>
+
+    <section class="mg-card mg-span-3">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-chart-histogram"></i> Ledger</h2>
+          <p class="mg-card-sub">Consistency compounds trust.</p>
+        </div>
+      </div>
+      <div class="mg-card-body">
+        <div class="mg-week">
+          @for (point of state().week; track point.date) {
+            <div class="mg-week-col" [class.is-today]="point.date === today">
+              <div class="mg-week-track">
+                <span [style.height.%]="barHeight(point.tasksDone, point.objectivesDone)"></span>
+              </div>
+              <small>{{ point.label }}</small>
+            </div>
+          }
+        </div>
+        <div class="mg-ledger-stats">
+          <div><strong>{{ weekTasks() }}</strong><span>tasks done this week</span></div>
+          <div><strong>{{ weekObjectives() }}</strong><span>objectives completed</span></div>
+          <div><strong>{{ state().pulse.streak }}<small>d</small></strong><span>current streak</span></div>
+        </div>
+        <p class="mg-ledger-note">
+          Trust is built in small, documented moments. The ledger simply makes them visible.
+        </p>
+      </div>
+    </section>
+
+    <section class="mg-card mg-span-12 mg-focus-tasks">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-bolt"></i> Focus tasks</h2>
+          <p class="mg-card-sub">The next few moves that keep today’s intent honest.</p>
+        </div>
+        <a routerLink="/tasks" class="mg-card-link">Open task board <i class="ti ti-arrow-right"></i></a>
+      </div>
+      <div class="mg-card-body">
+        @if (state().focusTasks.length) {
+          <div class="mg-focus-grid">
+            @for (task of state().focusTasks; track task.id) {
+              <article class="mg-focus-task">
+                <div class="mg-focus-top">
+                  <span class="mg-focus-ref">{{ task.ref }}</span>
+                  <mg-badge [label]="task.priority" [tone]="priorityTone(task.priority)" />
+                </div>
+                <h3>{{ task.title }}</h3>
+                <div class="mg-focus-meta">
+                  <span [class.mg-danger-text]="task.due < today"><i class="ti ti-calendar"></i> {{ dueLabel(task.due) }}</span>
+                  <span><i class="ti ti-user"></i> {{ task.owner }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="mg-focus-complete"
+                  (click)="markTaskDone(task)"
+                  [disabled]="busyTask() === task.id"
+                >
+                  <i class="ti ti-check"></i>
+                  {{ busyTask() === task.id ? 'Closing…' : 'Mark done' }}
+                </button>
+              </article>
+            }
+          </div>
+        } @else {
+          <mg-empty title="Focus list is clear" message="Nothing urgent is waiting. Use the space to get ahead of the next decision." />
+        }
+      </div>
+    </section>
+  </div>
+
+  @if (notice()) {
+    <div class="mg-toast" role="status">
+      <i class="ti ti-circle-check"></i>
+      {{ notice() }}
+    </div>
+  }
+</div>

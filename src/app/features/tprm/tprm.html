@@ -1,0 +1,272 @@
+<div class="mg-page mg-tprm">
+  <header class="mg-page-head">
+    <div>
+      <span class="mg-eyebrow"><i class="ti ti-building-bank"></i> Third-party risk</span>
+      <h1 class="mg-page-title">Third-party risk is where <em>breaches often live</em>.</h1>
+      <p class="mg-page-subtitle">
+        A vendor register is not an inventory. It is a map of business dependency, evidence expiry, and concentration risk.
+      </p>
+    </div>
+    <div class="mg-page-actions">
+      <span class="mg-register-chip">
+        <i class="ti ti-file-text"></i>
+        File-based register · {{ stats().total }} vendors
+      </span>
+    </div>
+  </header>
+
+  <section class="mg-tprm-stats" aria-label="Vendor summary">
+    <article class="mg-tprm-stat">
+      <span>Active vendors</span>
+      <strong>{{ stats().total }}</strong>
+      <small>{{ stats().restricted }} with restricted data</small>
+    </article>
+    <article class="mg-tprm-stat is-indigo">
+      <span>Tier 1</span>
+      <strong>{{ stats().tierOne }}</strong>
+      <small>Material business dependency</small>
+    </article>
+    <article class="mg-tprm-stat is-red">
+      <span>Escalated</span>
+      <strong>{{ stats().escalated }}</strong>
+      <small>Needs an executive decision</small>
+    </article>
+    <article class="mg-tprm-stat is-orange">
+      <span>Due in 14 days</span>
+      <strong>{{ stats().dueSoon }}</strong>
+      <small>Before the next renewal</small>
+    </article>
+  </section>
+
+  <div class="mg-tprm-toolbar">
+    <div class="mg-filter-row" role="group" aria-label="Filter by tier">
+      @for (tier of tiers; track tier) {
+        <button type="button" class="mg-chip" [class.is-active]="tierFilter() === tier" (click)="tierFilter.set(tier)">
+          {{ tier === 'all' ? 'All tiers' : 'Tier ' + tier }}
+        </button>
+      }
+    </div>
+    <div class="mg-tprm-toolbar-right">
+      <label class="mg-field mg-status-select">
+        <span class="mg-sr-only">Filter by review status</span>
+        <select class="mg-select" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+          <option value="all">All statuses</option>
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ vendorStatusLabel(status) }}</option>
+          }
+        </select>
+      </label>
+      <label class="mg-search">
+        <i class="ti ti-search" aria-hidden="true"></i>
+        <input
+          class="mg-input"
+          type="search"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+          placeholder="Search vendor or service"
+          aria-label="Search vendors"
+        />
+      </label>
+    </div>
+  </div>
+
+  <div class="mg-tprm-grid">
+    <section class="mg-card mg-tprm-table-card">
+      <div class="mg-card-body is-flush">
+        @if (filtered().length) {
+          <div class="mg-table-wrap">
+            <table class="mg-table mg-tprm-table">
+              <thead>
+                <tr>
+                  <th>Vendor</th>
+                  <th>Tier</th>
+                  <th>Rating</th>
+                  <th>Status</th>
+                  <th>Review</th>
+                  <th>Due</th>
+                  <th class="is-right"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (vendor of filtered(); track vendor.id) {
+                  <tr [class.is-selected]="selectedId() === vendor.id" [class.is-busy]="busy() === vendor.id">
+                    <td>
+                      <button type="button" class="mg-vendor-title" (click)="select(vendor)">
+                        <span class="mg-vendor-name">{{ vendor.vendor }}</span>
+                        <span class="mg-vendor-service">{{ vendor.ref }} · {{ vendor.service }}</span>
+                      </button>
+                    </td>
+                    <td class="is-nowrap">
+                      <span class="mg-tier" [class.is-tier-one]="vendor.tier === 1">T{{ vendor.tier }}</span>
+                    </td>
+                    <td><mg-badge [label]="vendor.riskRating" [tone]="priorityTone(vendor.riskRating)" /></td>
+                    <td>
+                      <select
+                        class="mg-row-status"
+                        [value]="vendor.status"
+                        [attr.aria-label]="'Change status for ' + vendor.vendor"
+                        (change)="changeStatus(vendor, $any($event.target).value)"
+                      >
+                        @for (status of statuses; track status) {
+                          <option [value]="status">{{ vendorStatusLabel(status) }}</option>
+                        }
+                      </select>
+                    </td>
+                    <td>
+                      <div class="mg-review-cell">
+                        <div class="mg-progress" [class]="'mg-progress ' + toneFor(vendor.riskRating)">
+                          <span [style.width.%]="vendor.progress"></span>
+                        </div>
+                        <small>{{ vendor.progress }}%</small>
+                      </div>
+                    </td>
+                    <td class="is-nowrap" [class.mg-danger-text]="vendor.reviewDue < today && vendor.status !== 'complete'">
+                      {{ dueLabel(vendor.reviewDue) }}
+                    </td>
+                    <td class="is-right">
+                      <button type="button" class="mg-link-arrow" (click)="select(vendor)" aria-label="Inspect vendor">
+                        Open <i class="ti ti-chevron-right"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <mg-empty
+            title="No vendors match this view"
+            message="Adjust the filters, or start the review that should have happened last quarter."
+            icon="ti-filter-off"
+          />
+        }
+      </div>
+    </section>
+
+    <aside class="mg-tprm-aside">
+      @if (selected(); as vendor) {
+        <section class="mg-card mg-vendor-detail">
+          <div class="mg-vendor-detail-head">
+            <div class="mg-vendor-detail-top">
+              <span class="mg-tier" [class.is-tier-one]="vendor.tier === 1">Tier {{ vendor.tier }}</span>
+              <mg-badge [label]="vendor.riskRating" [tone]="priorityTone(vendor.riskRating)" />
+            </div>
+            <span class="mg-vendor-ref">{{ vendor.ref }}</span>
+            <h2>{{ vendor.vendor }}</h2>
+            <span class="mg-vendor-detail-service">{{ vendor.service }}</span>
+          </div>
+
+          <div class="mg-card-body">
+            <div class="mg-review-progress">
+              <div class="mg-review-progress-head">
+                <span class="mg-label">Review progress</span>
+                <strong>{{ vendor.progress }}%</strong>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                [value]="vendor.progress"
+                (change)="changeProgress(vendor, $any($event.target).value)"
+                aria-label="Review progress"
+              />
+              <span class="mg-help">Move the review forward in deliberate steps.</span>
+            </div>
+
+            <dl class="mg-vendor-facts">
+              <div><dt>Owner</dt><dd>{{ vendor.owner }}</dd></div>
+              <div><dt>Data class</dt><dd>{{ vendor.dataClass }}</dd></div>
+              <div><dt>Framework</dt><dd>{{ vendor.framework }}</dd></div>
+              <div><dt>Last review</dt><dd>{{ formatDate(vendor.lastReview, { day: 'numeric', month: 'short', year: 'numeric' }) }}</dd></div>
+              <div class="is-wide">
+                <dt>Next review</dt>
+                <dd [class.mg-danger-text]="vendor.reviewDue < today && vendor.status !== 'complete'">
+                  {{ dueLabel(vendor.reviewDue) }} · {{ formatDate(vendor.reviewDue, { weekday: 'short', day: 'numeric', month: 'long' }) }}
+                </dd>
+              </div>
+            </dl>
+
+            @if (vendor.concerns.length) {
+              <div class="mg-vendor-concerns">
+                <span class="mg-vendor-section-label">Open concerns</span>
+                <ul>
+                  @for (concern of vendor.concerns; track concern) {
+                    <li><i class="ti ti-alert-circle"></i> {{ concern }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (vendor.notes) {
+              <div class="mg-vendor-notes">
+                <span class="mg-vendor-section-label">Review note</span>
+                <p>{{ vendor.notes }}</p>
+              </div>
+            }
+
+            <div class="mg-vendor-status-actions">
+              <span class="mg-label">Review state</span>
+              <div class="mg-filter-row">
+                @for (status of statuses; track status) {
+                  <button
+                    type="button"
+                    class="mg-chip"
+                    [class.is-active]="vendor.status === status"
+                    (click)="changeStatus(vendor, status)"
+                  >
+                    {{ vendorStatusLabel(status) }}
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+      } @else {
+        <section class="mg-card">
+          <mg-empty
+            title="Select a vendor"
+            message="Open a vendor to see the evidence, the concerns, and the next review gate."
+            icon="ti-building-search"
+          />
+        </section>
+      }
+
+      <section class="mg-card mg-tprm-priorities">
+        <div class="mg-card-head">
+          <div>
+            <h2 class="mg-card-title"><i class="ti ti-flame"></i> Review priorities</h2>
+            <p class="mg-card-sub">The next renewals that need a decision.</p>
+          </div>
+        </div>
+        <div class="mg-card-body">
+          @if (priorities().length) {
+            <div class="mg-priority-list">
+              @for (vendor of priorities(); track vendor.id) {
+                <button type="button" class="mg-priority-item" (click)="select(vendor)">
+                  <span class="mg-priority-dot" [class]="'mg-priority-dot ' + toneFor(vendor.riskRating)"></span>
+                  <span class="mg-priority-main">
+                    <strong>{{ vendor.vendor }}</strong>
+                    <small>{{ vendorStatusLabel(vendor.status) }} · {{ vendor.progress }}% complete</small>
+                  </span>
+                  <span class="mg-priority-due" [class.mg-danger-text]="vendor.reviewDue < today">
+                    {{ dueLabel(vendor.reviewDue) }}
+                  </span>
+                </button>
+              }
+            </div>
+          } @else {
+            <mg-empty title="No urgent reviews" message="The register is calm. Keep it current before the next renewal cycle." icon="ti-circle-check" />
+          }
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  @if (notice()) {
+    <div class="mg-toast" role="status">
+      <i class="ti ti-circle-check"></i>
+      {{ notice() }}
+    </div>
+  }
+</div>

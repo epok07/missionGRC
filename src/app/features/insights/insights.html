@@ -1,0 +1,156 @@
+<div class="mg-page mg-insights">
+  <header class="mg-page-head">
+    <div>
+      <span class="mg-eyebrow"><i class="ti ti-quote"></i> Trust library</span>
+      <h1 class="mg-page-title">The words that turn technical reality into <em>business language</em>.</h1>
+      <p class="mg-page-subtitle">
+        Questions to ask risk owners. Phrases for leadership. Prompts for yourself when the day gets loud.
+      </p>
+    </div>
+    <div class="mg-page-actions">
+      <span class="mg-library-count">
+        <i class="ti ti-books"></i>
+        {{ stats().total }} prompts on file
+      </span>
+    </div>
+  </header>
+
+  <div class="mg-insight-hero-grid">
+    <div class="mg-insight-feature">
+      <mg-insight-card
+        [insight]="featured()"
+        label="From the trust library"
+        actionLabel="Show another prompt"
+        (rotate)="rotate()"
+      />
+    </div>
+
+    <section class="mg-card mg-insight-guide">
+      <div class="mg-card-head">
+        <div>
+          <h2 class="mg-card-title"><i class="ti ti-compass"></i> How to use this library</h2>
+          <p class="mg-card-sub">A question is a control with better manners.</p>
+        </div>
+      </div>
+      <div class="mg-card-body">
+        <div class="mg-guide-list">
+          <div class="mg-guide-item">
+            <span class="mg-guide-number">01</span>
+            <div>
+              <strong>Ask before the meeting</strong>
+              <p>Send the question ahead. It turns a status update into a prepared decision.</p>
+            </div>
+          </div>
+          <div class="mg-guide-item">
+            <span class="mg-guide-number">02</span>
+            <div>
+              <strong>Name the trade-off</strong>
+              <p>Risk owners respond to choices, not frameworks. Ask what they are willing to accept.</p>
+            </div>
+          </div>
+          <div class="mg-guide-item">
+            <span class="mg-guide-number">03</span>
+            <div>
+              <strong>Leave with evidence</strong>
+              <p>A good question ends with a name, a date, and a document. Otherwise it was only conversation.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mg-guide-stats">
+          <div><strong>{{ stats().questions }}</strong><span>questions</span></div>
+          <div><strong>{{ stats().quotes }}</strong><span>quotes</span></div>
+          <div><strong>{{ stats().forLeaders }}</strong><span>for leaders</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="mg-insight-toolbar">
+    <div class="mg-filter-row" role="group" aria-label="Filter by kind">
+      <button type="button" class="mg-chip" [class.is-active]="kindFilter() === 'all'" (click)="kindFilter.set('all')">
+        All prompts
+      </button>
+      <button type="button" class="mg-chip" [class.is-active]="kindFilter() === 'question'" (click)="kindFilter.set('question')">
+        <i class="ti ti-message-question"></i>
+        Questions
+      </button>
+      <button type="button" class="mg-chip" [class.is-active]="kindFilter() === 'quote'" (click)="kindFilter.set('quote')">
+        <i class="ti ti-quote"></i>
+        Quotes
+      </button>
+    </div>
+    <div class="mg-insight-toolbar-right">
+      <label class="mg-field mg-status-select">
+        <span class="mg-sr-only">Filter by audience</span>
+        <select class="mg-select" [value]="audienceFilter()" (change)="audienceFilter.set($any($event.target).value)">
+          <option value="all">All audiences</option>
+          <option value="risk-owner">Risk owners</option>
+          <option value="leadership">Leadership</option>
+          <option value="self">Myself</option>
+        </select>
+      </label>
+      <label class="mg-search">
+        <i class="ti ti-search" aria-hidden="true"></i>
+        <input
+          class="mg-input"
+          type="search"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+          placeholder="Search the library"
+          aria-label="Search the trust library"
+        />
+      </label>
+    </div>
+  </div>
+
+  @if (filtered().length) {
+    <div class="mg-library-grid">
+      @for (insight of filtered(); track insight.id) {
+        <article class="mg-library-card" [class.is-featured]="featured()?.id === insight.id">
+          <div class="mg-library-top">
+            <span class="mg-library-kind" [class.is-quote]="insight.kind === 'quote'">
+              <i class="ti" [class]="'ti ' + (insight.kind === 'quote' ? 'ti-quote' : 'ti-message-question')"></i>
+              {{ kindLabel(insight.kind) }}
+            </span>
+            <span class="mg-library-audience">{{ audienceOrCategory(insight) }}</span>
+          </div>
+          <p class="mg-library-text" (click)="select(insight)">“{{ insight.text }}”</p>
+          <div class="mg-library-foot">
+            <span class="mg-library-source">
+              {{ insight.category }}
+              @if (insight.attribution) {
+                · {{ insight.attribution }}
+              }
+            </span>
+            <div class="mg-library-actions">
+              <button type="button" class="mg-library-btn" (click)="copy(insight)">
+                <i class="ti" [class]="'ti ' + (copiedId() === insight.id ? 'ti-check' : 'ti-copy')"></i>
+                {{ copiedId() === insight.id ? 'Copied' : 'Copy' }}
+              </button>
+              <button type="button" class="mg-library-btn" (click)="select(insight)">
+                <i class="ti ti-arrow-up-right"></i>
+                Feature
+              </button>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <section class="mg-card">
+      <mg-empty
+        title="No prompts match this view"
+        message="Try a different audience, or search for the word you would use in the room."
+        icon="ti-quote-off"
+      />
+    </section>
+  }
+
+  @if (copiedId()) {
+    <div class="mg-toast" role="status">
+      <i class="ti ti-circle-check"></i>
+      Prompt copied to the clipboard.
+    </div>
+  }
+</div>
