@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": false
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -68,6 +69,21 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "demo": {
+              "outputMode": "static",
+              "ssr": false,
+              "baseHref": "/missionGRC/",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/core/runtime.ts",
+                  "with": "src/app/core/runtime.demo.ts"
+                },
+                {
+                  "replace": "src/app/app.routes.server.ts",
+                  "with": "src/app/app.routes.server.demo.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"

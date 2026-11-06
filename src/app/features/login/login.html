@@ -1,7 +1,7 @@
 <div class="mg-login">
   <section class="mg-login-brand" aria-label="About MissionGRC">
     <div class="mg-login-brand-inner">
-      <a href="/login" class="mg-login-logo" aria-label="MissionGRC home">
+      <a routerLink="/login" class="mg-login-logo" aria-label="MissionGRC home">
         <span class="mg-login-logo-mark" aria-hidden="true">
           <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M16 3.5 27 8v8.2c0 6.2-4.4 10.7-11 12.3C9.4 26.9 5 22.4 5 16.2V8l11-4.5Z" stroke="currentColor" stroke-width="1.8"/>
@@ -137,7 +137,7 @@
       <div class="mg-login-demo">
         <div class="mg-login-demo-head">
           <span>Demo accounts</span>
-          <small>Local skeleton only</small>
+          <small>{{ demoMode ? 'Demo · saved in this browser' : 'Local skeleton only' }}</small>
         </div>
         <div class="mg-login-demo-grid">
           @for (account of accounts; track account.username) {

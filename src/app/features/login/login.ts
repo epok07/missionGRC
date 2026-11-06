@@ -2,8 +2,9 @@ import { DOCUMENT } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { DEMO_MODE } from '../../core/runtime';
 
 type DemoAccount = {
   username: string;
@@ -15,7 +16,7 @@ type DemoAccount = {
 
 @Component({
   selector: 'mg-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
@@ -26,6 +27,7 @@ export class LoginPage {
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly demoMode = DEMO_MODE;
   protected readonly showPassword = signal(false);
   protected readonly submitting = signal(false);
   protected readonly error = signal('');

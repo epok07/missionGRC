@@ -2,7 +2,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChang
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideClientHydration, withEventReplay, withHttpTransferCacheOptions } from '@angular/platform-browser';
 import { TitleStrategy, provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
-import { apiBaseInterceptor } from './core/api-base.interceptor';
+import { APP_INTERCEPTORS } from './core/runtime';
 import { AppTitleStrategy } from './core/title.strategy';
 import { routes } from './app.routes';
 
@@ -15,7 +15,7 @@ export const appConfig: ApplicationConfig = {
       withComponentInputBinding(),
       withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
     ),
-    provideHttpClient(withFetch(), withInterceptors([apiBaseInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors(APP_INTERCEPTORS)),
     provideClientHydration(
       withEventReplay(),
       withHttpTransferCacheOptions({ includePostRequests: false }),

@@ -36,6 +36,8 @@ export class AppTitleStrategy extends TitleStrategy {
       canonical.rel = 'canonical';
       this.document.head.appendChild(canonical);
     }
-    canonical.href = `${this.document.location.origin}${snapshot.url.split('?')[0]}`;
+    const baseHref = this.document.querySelector('base')?.getAttribute('href') ?? '/';
+    const basePath = baseHref.replace(/\/$/, '');
+    canonical.href = `${this.document.location.origin}${basePath}${snapshot.url.split('?')[0]}`;
   }
 }

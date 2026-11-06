@@ -1,6 +1,9 @@
 import { promises as fs } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import matter from 'gray-matter';
+import { renderMarkdown } from '../shared/markdown';
+
+export { renderMarkdown };
 
 /**
  * All persistence is human-readable Markdown with YAML frontmatter.
@@ -103,97 +106,6 @@ export async function replaceFile(path: string, contents: string): Promise<void>
   const temporary = `${path}.${process.pid}.tmp`;
   await fs.writeFile(temporary, contents, 'utf8');
   await fs.rename(temporary, path);
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function renderInline(value: string): string {
-  return value
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-}
-
-/**
- * A deliberately small Markdown renderer. Input is escaped first so stored
- * notes can never inject HTML into an executive brief.
- */
-export function renderMarkdown(markdown: string): string {
-  const lines = escapeHtml(markdown).split(/\r?\n/);
-  const output: string[] = [];
-  let paragraph: string[] = [];
-  let list: 'ul' | 'ol' | null = null;
-
-  const flushParagraph = () => {
-    if (paragraph.length) {
-      output.push(`<p>${renderInline(paragraph.join(' '))}</p>`);
-      paragraph = [];
-    }
-  };
-  const closeList = () => {
-    if (list) {
-      output.push(`</${list}>`);
-      list = null;
-    }
-  };
-  const openList = (next: 'ul' | 'ol') => {
-    if (list !== next) {
-      closeList();
-      output.push(`<${next}>`);
-      list = next;
-    }
-  };
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      flushParagraph();
-      closeList();
-      continue;
-    }
-    if (trimmed.startsWith('### ')) {
-      flushParagraph();
-      closeList();
-      output.push(`<h3>${renderInline(trimmed.slice(4))}</h3>`);
-      continue;
-    }
-    if (trimmed.startsWith('## ')) {
-      flushParagraph();
-      closeList();
-      output.push(`<h2>${renderInline(trimmed.slice(3))}</h2>`);
-      continue;
-    }
-    if (trimmed.startsWith('# ')) {
-      flushParagraph();
-      closeList();
-      output.push(`<h2>${renderInline(trimmed.slice(2))}</h2>`);
-      continue;
-    }
-    if (/^[-*]\s+/.test(trimmed)) {
-      flushParagraph();
-      openList('ul');
-      output.push(`<li>${renderInline(trimmed.replace(/^[-*]\s+/, ''))}</li>`);
-      continue;
-    }
-    if (/^\d+\.\s+/.test(trimmed)) {
-      flushParagraph();
-      openList('ol');
-      output.push(`<li>${renderInline(trimmed.replace(/^\d+\.\s+/, ''))}</li>`);
-      continue;
-    }
-    closeList();
-    paragraph.push(trimmed);
-  }
-
-  flushParagraph();
-  closeList();
-  return output.join('\n');
 }
 
 const DATA_README = `# MissionGRC data

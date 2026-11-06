@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and smoke-test the Node server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the Express/SSR server
+        run: npm run build
+
+      - name: Start the server and request the login page
+        env:
+          PORT: '4000'
+          GRC_DATA_DIR: ${{ runner.temp }}/missiongrc-data
+        run: |
+          npm run serve:ssr:mission-grc > server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4000/login -o login.html; then
+              grep -q 'MissionGRC' login.html
+              echo "Node server responded on /login"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat server.log
+          exit 1

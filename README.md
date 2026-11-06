@@ -1,59 +1,90 @@
-# MissionGrc
+# MissionGRC
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.42.
+A daily operating workspace for governance, risk, and compliance specialists: plan the day around
+decisions, keep open items owned, manage third-party risk, and turn complex risk into board-ready
+narratives.
 
-## Development server
+**Live proof-of-concept demo:** <https://epok07.github.io/missionGRC/>
 
-To start a local development server, run:
+The public demo is a static, browser-only build. Sign in with either demo account:
 
-```bash
-ng serve
-```
+| Username | Password        | Profile        |
+| -------- | --------------- | -------------- |
+| `admin`  | `Dare2Hack$`    | Alex Morgan    |
+| `ki`     | `Dare2ImpressU` | Ki             |
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Demo edits are stored in your browser's `localStorage`; nothing is sent to a server.
 
-## Code scaffolding
+## How the deployment works
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+GitHub Pages can only serve static files, so it cannot run the Express/SSR server. The
+`deploy-pages.yml` workflow therefore builds a client-rendered version of the same Angular app:
 
-```bash
-ng generate component component-name
-```
+- `npm run demo:data` seeds the real server's demo workspace into a temporary folder and serialises
+  it to `public/demo-data.json`.
+- The `demo` build configuration replaces the HTTP layer with an in-browser API
+  (`src/app/core/demo/`) and renders every route on the client.
+- Dated demo data is shifted to the visitor's current day, so the demo keeps working even when the
+  last deployment was months ago.
+- The workflow publishes `dist/mission-grc/browser` to GitHub Pages. A monthly schedule refreshes
+  the snapshot.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+The real Express server remains unchanged for local or server deployments.
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Local development
 
 ```bash
-ng test
+npm install
+npm start
 ```
 
-## Running end-to-end tests
+Open <http://localhost:4200/>. The first server start seeds the Markdown workspace in `data/`.
+Sign in with the demo accounts above.
 
-For end-to-end (e2e) testing, run:
+### Run the public demo build locally
 
 ```bash
-ng e2e
+npm run build:demo
+cp dist/mission-grc/browser/index.csr.html dist/mission-grc/browser/index.html
+cp dist/mission-grc/browser/index.csr.html dist/mission-grc/browser/404.html
+# Serve dist/mission-grc/browser at the path /missionGRC/ (any static server with SPA fallback).
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+`npm run demo:data` alone regenerates `public/demo-data.json` from the server seed.
 
-## Additional Resources
+## Production-style Node server
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```bash
+npm run build
+GRC_DATA_DIR=/var/lib/missiongrc PORT=4000 npm run serve:ssr:mission-grc
+```
+
+Environment variables:
+
+| Variable           | Purpose                                                        |
+| ------------------ | -------------------------------------------------------------- |
+| `PORT`             | HTTP port (default `4000`).                                     |
+| `GRC_DATA_DIR`     | Directory for the Markdown workspace (default `./data`).        |
+| `SESSION_SECRET`   | HMAC secret for signed session cookies. Set this in production. |
+| `NG_ALLOWED_HOSTS` | Comma-separated extra Host headers accepted by Angular SSR.     |
+| `PUBLIC_ORIGIN`    | Public origin used for sitemap URLs and allowed hosts.          |
+
+The `ci.yml` workflow builds this server and smoke-tests `/login` on every push.
+
+## Build and test
+
+```bash
+npm run build     # Express/SSR production build
+npm run build:demo # static GitHub Pages build
+npm test          # Karma unit tests
+```
+
+## Data model
+
+The workspace is plain Markdown with YAML frontmatter. Each record is a file under `data/`:
+tasks, risks/issues/decisions, meetings, daily objectives, vendors, and board briefs. The browser
+demo mirrors the same records in `public/demo-data.json` and persists changes locally.
+
+## License
+
+See [LICENSE.md](LICENSE.md).
